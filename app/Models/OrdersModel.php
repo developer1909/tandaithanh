@@ -37,6 +37,7 @@ class OrdersModel extends Model
         'order_status',
         'payment_status',
         'order_code',
+        'status_export',
     ];
 
 

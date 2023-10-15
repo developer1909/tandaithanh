@@ -117,7 +117,8 @@
                         if (data.code === 200){
                             console.log(data.data)
                             $('#add-product-modal').modal('hide');
-                            loadProduct(data.data)
+                            // loadProduct(data.data)
+                            location.reload();
                         } else {
                             alert(data.message)
                         }
@@ -179,6 +180,7 @@
                         '<td style="vertical-align: middle" class="text-center">'+element.quantity+'</td>'+
                         '<td style="vertical-align: middle" class="text-center">'+price_product1+'</td>'+
                         '<td style="vertical-align: middle" class="text-center">'+into_money+'</td>'+
+
                         '<td style="vertical-align: middle" class="text-center">' +
                         '<a href="javascript:void(0)" onclick="updateProduct(this)" category="'+element.category+'" product-id="'+element.product_id+'" product-name="'+element.product_name+'" ' +
                         'price_product="'+element.price_product+'" product-quantity="'+element.quantity+'" into_money="'+element.into_money+'" ' +

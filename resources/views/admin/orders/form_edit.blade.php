@@ -116,7 +116,9 @@
                                                 </div>
                                                 <div id="div-freight" style="width: -webkit-fill-available;"  class="">
                                                     <div class="col-12">
+                                                        @if($model->status_export == 0)
                                                         <a href="javascript:void(0)" class="btn btn-success m-b-20" onclick="functionAddProduct()">Thêm mặt hàng</a>
+                                                        @endif
                                                         <table id="simpletable" class="table table-striped table-bordered nowrap">
                                                             <thead>
                                                             <tr>
@@ -127,6 +129,8 @@
                                                                 <th>Số lượng</th>
                                                                 <th>Đơn giá</th>
                                                                 <th>thành tiền</th>
+                                                                <th>Tồn kho</th>
+                                                                <th>Xuất kho</th>
                                                                 <th>Thao tác</th>
                                                             </tr>
                                                             </thead>
@@ -148,10 +152,31 @@
                                                                     <td>{{number_format($p->price_product) }}</td>
                                                                     <td>{{number_format($p->quantity*$p->price_product,0)}}</td>
                                                                     <td>
+                                                                        <p style="margin: 0;">Tông số lượng: <span class="{{$p->total_qty >= $p->quantity ? 'text-success' : 'text-danger'}}" style="font-weight: 800;" >{{$p->total_qty}}</span></p>
+{{--                                                                        <div id="div-qty{{$item->id}}">--}}
+                                                                            @foreach($p->product_qty as $qty)
+                                                                                @if($qty->qty>0)
+                                                                                    <p style="margin: 0;">Kho {{$qty->warehouse}}: {{$qty->qty}}</p>
+                                                                                @endif
+                                                                            @endforeach
+{{--                                                                        </div>--}}
+                                                                    </td>
+                                                                    <td class="text-center" id="xuat-kho{{$p->order_products_id}}">{{$p->warehouse}}</td>
+                                                                    <td>
+                                                                        @if($model->status_export == 0)
                                                                         <a href="javascript:void(0)" onclick="updateProduct(this)" category="{{$p->category}}" product-id="{{$p->product_id}}" product-name="{{$p->product_name}}"
                                                                         price_product="{{$p->price_product}}" product_quantity="{{$p->quantity}}" into_money="{{$p->into_money}}"
                                                                         id_temp="{{$p->order_products_id}}" id_order_product="{{$p->order_products_id}}" class="btn btn-sm btn-inverse m-r-5">Sửa</a>
                                                                         <a href="javascript:void(0)" onclick="removeProduct({{$p->order_products_id}})" class="btn btn-sm btn-danger">Xóa</a>
+
+                                                                        <div class="dropdown-primary dropdown open">
+                                                                            <button class="btn btn-sm btn-primary dropdown-toggle waves-effect waves-light " type="button" id="dropdown-2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">Chọn kho hàng xuất</button>
+                                                                            <div class="dropdown-menu" aria-labelledby="dropdown-2" data-dropdown-in="fadeIn" data-dropdown-out="fadeOut">
+                                                                                <a class="dropdown-item waves-light waves-effect" href="javascript:void(0)" onclick="exportWarehouse(1, {{$p->order_products_id}})">Kho 1</a>
+                                                                                <a class="dropdown-item waves-light waves-effect" href="javascript:void(0)" onclick="exportWarehouse(2, {{$p->order_products_id}})">Kho 2</a>
+                                                                            </div>
+                                                                        </div>
+                                                                        @endif
                                                                     </td>
                                                                 </tr>
                                                             @endforeach
@@ -175,6 +200,10 @@
                                                 </div>
                                                 <div class="col-md-12 ">
                                                     <div class="form-group text-right">
+                                                        @if($model->status_export == 0)
+                                                            <a href="javascript:void(0)" onclick="exportOrder({{$model->id}})" class="btn btn-inverse"> Xuất hàng</a>
+                                                        @endif
+
                                                         <a href="javascript:void(0)" onclick="printLabel({{$model->id}})" class="btn btn-inverse"> In hóa đơn</a>
                                                         <button type="submit" class="btn btn-primary m-b-0"><i class="icofont icofont-diskette"></i> Lưu</button>
                                                         {{--                                                        <a href="javascript:void(0)" class="btn btn-secondary m-b-0" onclick="functionCancel(this)"><i class="icofont icofont-refresh"></i> Reset form</a>--}}
@@ -251,6 +280,27 @@
             $('[name=id_order_product]').val('');
         });
 
+        function exportWarehouse(w,id) {
+            $.ajax({
+                url: "{{ route('orders.update.warehouse') }}",
+                method: "GET",
+                data: {id: id,
+                    warehouse: w,
+                },
+                success: function (data) {
+                    if(typeof data === 'string'){
+                        data = JSON.parse(data);
+                    }
+                    if (data.code === 200){
+                        let text = '#xuat-kho'+id;
+                        $(text).text(data.data.warehouse);
+                    } else {
+                        alert(data.message)
+                    }
+                }
+            });
+        }
+
         function functionAddProduct(){
             $('#add-product-modal').modal('show');
             $('#title-modal').text('Thêm mặt hàng');
@@ -270,6 +320,24 @@
         function printLabel(id) {
             $.ajax({
                 url: "{{ route('orders.print') }}",
+                method: "GET",
+                data: {id: id
+                },
+                success: function (data) {
+                    if(typeof data === 'string'){
+                        data = JSON.parse(data);
+                    }
+                    if (data.code === 200){
+                        location.reload();
+                    } else {
+                        alert(data.message)
+                    }
+                }
+            });
+        }
+        function exportOrder(id) {
+            $.ajax({
+                url: "{{ route('orders.export') }}",
                 method: "GET",
                 data: {id: id
                 },

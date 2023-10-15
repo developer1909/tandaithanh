@@ -10,6 +10,7 @@ class OrderProductsModel extends Model
         'order_id',
         'product_id',
         'price',
-        'quantity'
+        'quantity',
+        'warehouse'
     ];
 }

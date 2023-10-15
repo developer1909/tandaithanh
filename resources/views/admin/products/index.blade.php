@@ -138,6 +138,17 @@
                                         </div>
                                     </div>
                                     <div class="card-block">
+                                        <div class="row">
+                                            <div class="col-md-3">
+                                                <select name="category_filter" id="category_filter" class="form-control">
+                                                    <option value="">Tất cả</option>
+
+                                                    @foreach(\Illuminate\Support\Facades\DB::table('categories')->orderBy('name', 'asc')->get() as $cat)
+                                                        <option value="{{$cat->name}}">{{$cat->name}}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
                                         <div class="dt-responsive table-responsive">
                                             <table id="simpletable" class="table table-striped table-bordered nowrap">
                                                 <thead>
@@ -159,16 +170,26 @@
                                                     <tr id="product{{$item->id}}">
                                                         <td style="vertical-align: middle" class="text-center">{{$i = $i+1}}</td>
                                                         <td style="vertical-align: middle; white-space: break-spaces;">{{$item->name}}</td>
-                                                        <td style="vertical-align: middle; white-space: break-spaces;">{{$item->category}}</td>
-                                                        <td style="vertical-align: middle; white-space: break-spaces;">{{$item->description}}</td>
-                                                        <td style="vertical-align: middle; white-space: break-spaces;">{{number_format($item->price,0) }}/{{$item->unit}}</td>
-                                                        <td style="vertical-align: middle; white-space: break-spaces;">{{$item->qty}}</td>
+                                                        <td >{{$item->category}}</td>
+                                                        <td >{{$item->description}}</td>
+                                                        <td >{{number_format($item->price,0) }}/{{$item->unit}}</td>
+                                                        <td >
+                                                            <p style="margin: 0;">Tông số lượng: <span style="font-weight: 800; color: #0ac282" id="total-qty{{$item->id}}">{{$item->qty}}</span></p>
+                                                            <div id="div-qty{{$item->id}}">
+                                                                @foreach($item->product_qty as $qty)
+                                                                    @if($qty->qty>0)
+                                                                        <p style="margin: 0;">Kho {{$qty->warehouse}}: {{$qty->qty}}</p>
+                                                                    @endif
+                                                                @endforeach
+                                                            </div>
+                                                        </td>
                                                         <td>
                                                             <a href="javascript:void(0)" class="btn btn-inverse btn-sm" product-id="{{$item->id}}" product-name="{{$item->name}}"
                                                                product-description="{{$item->description}}" product-category-id="{{$item->category_id}}"
                                                                 product-price="{{$item->price}}" product-unit="{{$item->unit}}"
                                                                onclick="functionEdit(this)"><i class="icofont icofont-ui-edit"></i> Sửa</a>
                                                             <a href="javascript:void(0)" class="btn btn-danger btn-sm delete-product" data-id="{{$item->id}}" data-product="{{$item->name}}"><i class="icofont icofont-ui-delete"></i> Xóa</a>
+                                                            <a href="javascript:void(0)" class="btn btn-success btn-sm" onclick="updateQTY({{$item->id}})">Cập nhật số lượng</a>
                                                         </td>
                                                     </tr>
                                                 @endforeach
@@ -187,6 +208,45 @@
         </div>
     </div>
     <form id="delete-form">
+        @csrf
+    </form>
+    <div class="modal fade" id="update-product-modal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="title-modal">Cập nhật số lượng sản phẩm</h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="form-group col-12">
+                            <label for="quantity">Tên sản phẩm: <span class="text-danger" id="name-product"></span></label>
+                        </div>
+                        <div class="form-group col-6">
+                            <input type="hidden" class="form-control" id="id-product-modal" name="id_product_modal">
+                            <label for="quantity">Kho 1: <span class="text-danger">(*)</span></label>
+                            <br>
+                            <input type="number" class="form-control" id="quantity1" name="quantity1" value="0" min="0">
+                            <p class="text-danger"></p>
+                        </div>
+                        <div class="form-group col-6">
+                            <label for="quantity">Kho 2: <span class="text-danger">(*)</span></label>
+                            <br>
+                            <input type="number" class="form-control" id="quantity2" name="quantity2" value="0" min="0">
+                            <p class="text-danger"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default waves-effect " data-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-primary waves-effect waves-light" onclick="updateQtyProduct()">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <form id="update-qty-form">
         @csrf
     </form>
 @endsection
@@ -212,6 +272,10 @@
                     }
                 }
             });
+            $('#category_filter').on('change', function (){
+                // let text = $(this).val();
+                table.search($(this).val()).draw() ;
+            });
         });
         function functionEdit(e){
             let id = $(e).attr('product-id');
@@ -236,6 +300,37 @@
             $('#description').val(null);
             $('#code').text('');
             $('#action-status').text('Thêm sản phẩm');
+        }
+
+        function updateQTY(id){
+            let w = 2;
+            $.ajax({
+                url: "{{ route('products.get_detail') }}",
+                method: "GET",
+                data: {id: id
+                },
+                success: function (data) {
+                    if(typeof data === 'string'){
+                        data = JSON.parse(data);
+                    }
+                    if (data.code === 200){
+                        console.log(data.data)
+                        $("#name-product").text(data.data.name);
+                        $("#id-product-modal").val(data.data.id);
+                        for (let i = 1; i <= w; i++){
+                            let id_qty = '#quantity'+i;
+                            data.data.product_qty.forEach(element => {
+                                if(element.warehouse === i){
+                                    $(id_qty).val(element.qty);
+                                }
+                            });
+                        }
+                        $('#update-product-modal').modal('show');
+                    } else {
+                        alert(data.message)
+                    }
+                }
+            });
         }
 
         $('.delete-product').click(function(event){
@@ -282,6 +377,44 @@
                 }
             });
         });
+
+        function updateQtyProduct(){
+            var data = document.getElementById('update-qty-form');
+            var formData = new FormData(data);
+            formData.append('id', $('#id-product-modal').val());
+            formData.append('qty1', $('#quantity1').val());
+            formData.append('qty2', $('#quantity2').val());
+            $.ajax({
+                url: '{{ route('products.update.qty') }}',
+                type: 'POST',
+                data: formData,
+                success: function (data) {
+                    if(typeof data === 'string'){
+                        data = JSON.parse(data);
+                    }
+                    if (data.code === 200) {
+                        console.log(data.data)
+                        let idRowProduct = '#total-qty'+$('#id-product-modal').val()
+                        let div = '#div-qty'+$('#id-product-modal').val()
+                        let total = 0;
+                        $(div).empty();
+                        data.data.forEach(element => {
+                            if (element.qty >0){
+                                $(div).append('<p style="margin: 0;">Kho '+element.warehouse+': '+element.qty+'</p>')
+                            }
+                            total = total + element.qty;
+                        });
+                        $(idRowProduct).text(total);
+                        $('#update-product-modal').modal('hide');
+                    } else {
+                        swal("Error", data.message, "error");
+                    }
+                },
+                cache: false,
+                contentType: false,
+                processData: false
+            });
+        }
     </script>
     <script src="{{asset('template_admin\files\bower_components\datatables.net\js\jquery.dataTables.min.js')}} "></script>
     <script src="{{asset('template_admin\files\bower_components\datatables.net-bs4\js\dataTables.bootstrap4.min.js')}}"></script>

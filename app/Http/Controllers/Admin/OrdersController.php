@@ -9,6 +9,7 @@ use App\Models\ImageProductOrdersModel;
 use App\Models\OrderProducts;
 use App\Models\OrderProductsModel;
 use App\Models\OrdersModel;
+use App\Models\ProductQtyModel;
 use App\Models\ProductsModel;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -34,10 +35,16 @@ class OrdersController extends Controller
                 $products = [];
                 Session::put('productInOrder', $products);
                 $model = $id ? OrdersModel::query()->findOrFail($id) : new OrdersModel();
-                $products = OrderProductsModel::select('order_products.id as order_products_id','products.category_id as category','products.*', 'products.name as product_name', 'order_products.quantity', 'order_products.price as price_product', 'order_products.product_id')
+                $products = OrderProductsModel::select('order_products.warehouse','order_products.id as order_products_id','products.category_id as category','products.*', 'products.name as product_name', 'order_products.quantity', 'order_products.price as price_product', 'order_products.product_id')
                     ->where('order_id', $id)->join('products', 'products.id', '=', 'product_id')
                     ->orderBy('name', 'asc')->get();
-
+                foreach ($products as $item){
+                    $item['product_qty'] = ProductQtyModel::where('product_id', $item['product_id'])->orderBy('warehouse')->get();
+                    $item['total_qty'] = 0;
+                    foreach ($item['product_qty'] as $qty){
+                        $item['total_qty'] = $item['total_qty'] + $qty['qty'];
+                    }
+                }
 //                dd($products);
                 return view('admin.orders.form_edit', ['model'=>$model, 'categories'=>$categories, 'products'=>$products]);
             } else {
@@ -287,6 +294,40 @@ class OrdersController extends Controller
             return redirect()->back()->withInput()->withErrors(['general' =>'sorry an unexpected error occurred. please try again later']);
         } catch (\Exception $e){
             return redirect()->back()->withInput()->withErrors(['general' =>'sorry an unexpected error occurred. please try again later']);
+        }
+    }
+
+    public function updateWarehouse(Request $request)
+    {
+        $request_data = $request->all();
+//        $model = OrdersModel::query()->findOrFail($request_data['order']);
+//        if ($model){
+            $check = OrderProductsModel::query()->findOrFail($request_data['id']);
+            if ($check){
+                $check['warehouse'] = $request_data['warehouse'];
+                $check->save();
+                return Helpers::dataSuccess('Success', $check);
+            }
+//        }
+        return Helpers::dataError('Lỗi');
+    }
+
+    public function exportOrder(Request $request)
+    {
+        $request_data = $request->all();
+        $model = OrdersModel::query()->findOrFail($request_data['id']);
+        if ($model){
+            $model['status_export'] = 1;
+            $model->save();
+            $list = OrderProductsModel::where('order_id', $model['id'])->get();
+            foreach ($list as $item){
+                $product = ProductQtyModel::where('product_id', $item['product_id'])->where('warehouse', $item['warehouse'])->first();
+                if ($product){
+                    $product['qty'] = $product['qty']-$item['quantity'];
+                    $product->save();
+                }
+            }
+            return Helpers::dataSuccess('success');
         }
     }
 

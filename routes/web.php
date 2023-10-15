@@ -22,9 +22,11 @@ Route::group(['prefix' => 'categories'], function () {
 });
 Route::group(['prefix' => 'products'], function () {
     Route::get('', [\App\Http\Controllers\Admin\ProductsController::class, 'index'])->name('products.index');
+    Route::get('get-detail', [\App\Http\Controllers\Admin\ProductsController::class, 'getDetail'])->name('products.get_detail');
     Route::get('ajax-list-product', [\App\Http\Controllers\Admin\ProductsController::class, 'ajaxListProduct'])->name('products.by.category');
     Route::post('', [\App\Http\Controllers\Admin\ProductsController::class, 'save'])->name('products.save');
     Route::post('delete-product', [\App\Http\Controllers\Admin\ProductsController::class, 'delete'])->name('products.delete');
+    Route::post('update-qty-product', [\App\Http\Controllers\Admin\ProductsController::class, 'productsUpdateQty'])->name('products.update.qty');
 });
 Route::group(['prefix' => 'orders'], function () {
     Route::get('', [\App\Http\Controllers\Admin\OrdersController::class, 'index'])->name('orders.index');
@@ -37,6 +39,8 @@ Route::group(['prefix' => 'orders'], function () {
     Route::post('add-product-edit-order', [\App\Http\Controllers\Admin\OrdersController::class, 'addProductToEditOrder'])->name('orders.add.edit.product');
     Route::get('remove-product-order', [\App\Http\Controllers\Admin\OrdersController::class, 'removeProductOrder'])->name('orders.remove.product');
     Route::get('print-order', [\App\Http\Controllers\Admin\OrdersController::class, 'printLabel'])->name('orders.print');
+    Route::get('export-order', [\App\Http\Controllers\Admin\OrdersController::class, 'exportOrder'])->name('orders.export');
+    Route::get('update-warehouse', [\App\Http\Controllers\Admin\OrdersController::class, 'updateWarehouse'])->name('orders.update.warehouse');
 //    Route::post('', [\App\Http\Controllers\Admin\ProductsController::class, 'save'])->name('products.save');
 //    Route::post('delete-product', [\App\Http\Controllers\Admin\ProductsController::class, 'delete'])->name('products.delete');
 });
