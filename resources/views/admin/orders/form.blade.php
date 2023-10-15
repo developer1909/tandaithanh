@@ -44,7 +44,7 @@
                                         <form method="POST" action="{{route('orders.save')}}">
                                             <div class="row">
                                                 @csrf
-                                                <input type="hidden" id="" name="id" value="{{$model->id}}">
+                                                <input type="hidden" id="id-order" name="id" value="{{$model->id}}">
                                                 <div class="col-md-12">
                                                     <div class="sub-title">Thông tin khách hàng</div>
                                                 </div>
@@ -204,6 +204,7 @@
                 if ($("#product_id").val() !== '0'){
                     let price = $(this).find('option:selected').attr('data-price');
                     let qty = $(this).find('option:selected').attr('data-qty');
+                    console.log(qty)
                     $('#price_product').val(price);
                     $('#qty').val(qty);
                     $('#quantity').val(1).attr('max', qty);
@@ -224,7 +225,6 @@
             $('[name=price_product]').val(0);
             $('[name=quantity]').val(1);
             $('[name=into_money]').val(0);
-            $('[name=note_modal]').val('');
             $('[name=id_temp]').val('');
         });
 
@@ -241,7 +241,6 @@
             $('[name=height]').val(1);
             $('[name=quantity]').val(1);
             $('[name=extra_charges]').val(0);
-            $('[name=note_modal]').val('');
         }
     </script>
     <script src="{{asset('template_admin\files\bower_components\datatables.net\js\jquery.dataTables.min.js')}} "></script>

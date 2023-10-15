@@ -71,6 +71,7 @@ class DashboardController extends Controller
 //        curl_close($curl);
 //        $data = json_decode($response);
 //        dd($data);
+//        return view('admin.home_test');
         return view('admin.home');
     }
 }

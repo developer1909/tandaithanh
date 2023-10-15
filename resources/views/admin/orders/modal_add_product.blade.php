@@ -14,6 +14,7 @@
                         <br>
                         <input type="hidden" class="form-control" id="qty" name="qty" value="0" step="1" min="0">
                         <input type="hidden" class="form-control" id="id_temp" name="id_temp">
+                        <input type="hidden" class="form-control" id="id_order_product" name="id_order_product">
                         <select class="js-example-data-array" name="category" id="category">
                             <option value="0">-- Chọn loại hàng --</option>
                             @foreach($categories as $cat)
@@ -36,7 +37,7 @@
                     <div class="form-group col-md-4">
                         <label for="quantity">Số lượng: <span class="text-danger">(*)</span></label>
                         <br>
-                        <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1" onchange="changeQuantity(this)">
+                        <input type="number" class="form-control" id="quantity" name="quantity" value="" min="1" onchange="changeQuantity(this)">
                         <p class="text-danger"></p>
                     </div>
                     <div class="form-group col-md-4">
@@ -54,12 +55,7 @@
                         </div>
                         <p class="text-danger"></p>
                     </div>
-                    <div class="form-group col-md-12">
-                        <label for="note_modal">Ghi chú:</label>
-                        <br>
-                        <textarea name="note_modal" class="form-control" id="note_modal" cols="" rows="3"></textarea>
-                        <p class="text-danger"></p>
-                    </div>
+
                 </div>
             </div>
             <div class="modal-footer">
@@ -83,48 +79,76 @@
 
     function addProduct(){
         let _token = $('input[name="_token"]').val();
+        let id = $('#id-order').val();
+        let id_order_product = $('#id_order_product').val();
         let category = $('[name=category]').val();
         let product_id = $('[name=product_id]').val();
         var id_temp = $('[name=id_temp]').val();
         let quantity = $('[name=quantity]').val();
         var price_product = $('[name=price_product]').val();
         var into_money = $('[name=into_money]').val();
-        var note_modal = $('[name=note_modal]').val();
         var data = document.getElementById('form-add-product');
         var formData = new FormData(data);
 
         if(category === '' || product_id === '' || price_product === '' || into_money === '' || quantity === ''){
             alert('Vui lòng nhập đủ thông tin');
         } else {
+            formData.append('id', id);
             formData.append('category', category);
             formData.append('product_id', product_id);
             formData.append('price_product', price_product);
             formData.append('quantity', quantity);
             formData.append('into_money', into_money);
-            formData.append('note', note_modal);
             formData.append('id_temp', id_temp);
-            $.ajax({
-                url: "{{ route('orders.add.product') }}",
-                method: "POST",
-                data: formData,
-                processData: false,
-                contentType: false,
-                // {_token: _token, product_name: product_name_modal, product_type: product_type,  price_product_type: price_product_type, quantity: quantity, extra_charges:extra_charges,
-                // weight: weight, wide: wide, long: long, height: height, note: note_modal, id_temp: id_temp},
-                success: function (data) {
-                    if(typeof data === 'string'){
-                        data = JSON.parse(data);
+            formData.append('id_order_product', id_order_product);
+            if(id){
+                $.ajax({
+                    url: "{{ route('orders.add.product') }}",
+                    method: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    // {_token: _token, product_name: product_name_modal, product_type: product_type,  price_product_type: price_product_type, quantity: quantity, extra_charges:extra_charges,
+                    // weight: weight, wide: wide, long: long, height: height, note: note_modal, id_temp: id_temp},
+                    success: function (data) {
+                        if(typeof data === 'string'){
+                            data = JSON.parse(data);
+                        }
+                        if (data.code === 200){
+                            console.log(data.data)
+                            $('#add-product-modal').modal('hide');
+                            loadProduct(data.data)
+                        } else {
+                            alert(data.message)
+                        }
                     }
-                    if (data.code === 200){
-                        console.log(data.data)
-                        $('#add-product-modal').modal('hide');
-                        loadProduct(data.data)
-                    } else {
-                        alert(data.message)
+                });
+                return;
+            } else {
+                $.ajax({
+                    url: "{{ route('orders.add.product') }}",
+                    method: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    // {_token: _token, product_name: product_name_modal, product_type: product_type,  price_product_type: price_product_type, quantity: quantity, extra_charges:extra_charges,
+                    // weight: weight, wide: wide, long: long, height: height, note: note_modal, id_temp: id_temp},
+                    success: function (data) {
+                        if(typeof data === 'string'){
+                            data = JSON.parse(data);
+                        }
+                        if (data.code === 200){
+                            console.log(data.data)
+                            $('#add-product-modal').modal('hide');
+                            loadProduct(data.data)
+                        } else {
+                            alert(data.message)
+                        }
                     }
-                }
-            });
-            return;
+                });
+                return;
+            }
+
         }
     }
 
@@ -147,18 +171,35 @@
                 console.log(element)
                 let price_product1 = new Intl.NumberFormat().format(element.price_product);
                 let into_money = new Intl.NumberFormat().format(element.into_money);
-                $('#data-product-table').append('<tr id="product"><td style="vertical-align: middle" class="text-center">'+number +'</td>'+
-                    '<td style="vertical-align: middle" class="">'+element.product_name+'</td>'+
-                    '<td style="vertical-align: middle" class="text-center">'+element.unit+'</td>'+
-                    '<td style="vertical-align: middle" class="text-center">'+element.quantity+'</td>'+
-                    '<td style="vertical-align: middle" class="text-center">'+price_product1+'</td>'+
-                    '<td style="vertical-align: middle" class="text-center">'+into_money+'</td>'+
-                    '<td style="vertical-align: middle" class="text-center">' +
-                    '<a href="javascript:void(0)" onclick="updateProduct(this)" category="'+element.category+'" product-id="'+element.product_id+'" product-name="'+element.product_name+'" ' +
-                    'price_product="'+element.price_product+'" product-quantity="'+element.quantity+'" into_money="'+element.into_money+'" ' +
-                    'id_temp="'+element.id_temp+'" note="'+element.note+'" class="btn btn-sm btn-inverse m-r-5">Sửa</a>' +
-                    '<a href="javascript:void(0)" onclick="removeProduct('+element.id_temp+')" class="btn btn-sm btn-danger">Xóa</a></td>'+
-                    '</tr>');
+                let id = $('#id-order').val();
+                if(id){
+                    $('#data-product-table').append('<tr id="product"><td style="vertical-align: middle" class="text-center">'+number +'</td>'+
+                        '<td style="vertical-align: middle" class="">'+element.product_name+'</td>'+
+                        '<td style="vertical-align: middle" class="text-center">'+element.unit+'</td>'+
+                        '<td style="vertical-align: middle" class="text-center">'+element.quantity+'</td>'+
+                        '<td style="vertical-align: middle" class="text-center">'+price_product1+'</td>'+
+                        '<td style="vertical-align: middle" class="text-center">'+into_money+'</td>'+
+                        '<td style="vertical-align: middle" class="text-center">' +
+                        '<a href="javascript:void(0)" onclick="updateProduct(this)" category="'+element.category+'" product-id="'+element.product_id+'" product-name="'+element.product_name+'" ' +
+                        'price_product="'+element.price_product+'" product-quantity="'+element.quantity+'" into_money="'+element.into_money+'" ' +
+                        'id_temp="'+element.order_products_id+'" class="btn btn-sm btn-inverse m-r-5">Sửa</a>' +
+                        '<a href="javascript:void(0)" onclick="removeProduct('+element.order_products_id+')" class="btn btn-sm btn-danger">Xóa</a></td>'+
+                        '</tr>');
+                } else {
+                    $('#data-product-table').append('<tr id="product"><td style="vertical-align: middle" class="text-center">'+number +'</td>'+
+                        '<td style="vertical-align: middle" class="">'+element.product_name+'</td>'+
+                        '<td style="vertical-align: middle" class="text-center">'+element.unit+'</td>'+
+                        '<td style="vertical-align: middle" class="text-center">'+element.quantity+'</td>'+
+                        '<td style="vertical-align: middle" class="text-center">'+price_product1+'</td>'+
+                        '<td style="vertical-align: middle" class="text-center">'+into_money+'</td>'+
+                        '<td style="vertical-align: middle" class="text-center">' +
+                        '<a href="javascript:void(0)" onclick="updateProduct(this)" category="'+element.category+'" product-id="'+element.product_id+'" product-name="'+element.product_name+'" ' +
+                        'price_product="'+element.price_product+'" product-quantity="'+element.quantity+'" into_money="'+element.into_money+'" ' +
+                        'id_temp="'+element.id_temp+'" class="btn btn-sm btn-inverse m-r-5">Sửa</a>' +
+                        '<a href="javascript:void(0)" onclick="removeProduct('+element.id_temp+')" class="btn btn-sm btn-danger">Xóa</a></td>'+
+                        '</tr>');
+                }
+
             });
         } else {
             $('#data-product-table').append('<tr class="odd"><td valign="top" colspan="10" class="dataTables_empty text-center">Không có dữ liệu để hiển thị</td></tr>');
@@ -167,27 +208,29 @@
         $('#total_price').val(price_product);
     }
     function updateProduct(tag){
+        console.log(tag);
         $('#title-modal').text('Cập nhật Sản phẩm');
-        // $("[name=product_type]").val( $(tag).attr('product-type'));
-
         $('[name=category]').val($(tag).attr('category')).change();
-
         $('[name=id_temp]').val($(tag).attr('id_temp'));
-        // $('[name=product_name_modal]').val($(tag).attr('product-name'));
         $('[name=price_product]').val($(tag).attr('price_product'));
-        $('[name=quantity]').val($(tag).attr('product-quantity'));
+        $('#quantity').val($(tag).attr('product_quantity'));
         $('[name=into_money]').val($(tag).attr('into_money'));
-        $('[name=note_modal]').val($(tag).attr('note') ? 'null' : '');
+        $('#into_money').val($(tag).attr('price_product') * $(tag).attr('product_quantity'));
+        $('[name=id_order_product]').val($(tag).attr('id_order_product'));
         $('#add-product-modal').modal('show');
+
         setTimeout(() => {
             $('[name=product_id]').val($(tag).attr('product-id')).change();
         }, "1000")
     }
     function removeProduct(id){
+        let id_order = $('#id-order').val();
         $.ajax({
             url: "{{ route('orders.remove.product') }}",
             method: "GET",
-            data: {id: id},
+            data: {id: id,
+                order_id: id_order
+            },
             success: function (data) {
                 if(typeof data === 'string'){
                     data = JSON.parse(data);

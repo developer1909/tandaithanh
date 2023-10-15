@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Validator;
+use Mccarlosen\LaravelMpdf\Facades\LaravelMpdf;
 
 class OrdersController extends Controller
 {
@@ -30,10 +31,14 @@ class OrdersController extends Controller
 //        try {
             $categories = CategoriesModel::orderBy('name', 'asc')->get();
             if ($id){
+                $products = [];
+                Session::put('productInOrder', $products);
                 $model = $id ? OrdersModel::query()->findOrFail($id) : new OrdersModel();
-                $products = OrderProductsModel::select('products.*', 'order_products.quantity as qty', 'order_products.price as price_product')
+                $products = OrderProductsModel::select('order_products.id as order_products_id','products.category_id as category','products.*', 'products.name as product_name', 'order_products.quantity', 'order_products.price as price_product', 'order_products.product_id')
                     ->where('order_id', $id)->join('products', 'products.id', '=', 'product_id')
                     ->orderBy('name', 'asc')->get();
+
+//                dd($products);
                 return view('admin.orders.form_edit', ['model'=>$model, 'categories'=>$categories, 'products'=>$products]);
             } else {
                 $model = new OrdersModel();
@@ -127,31 +132,86 @@ class OrdersController extends Controller
             if($validator->fails()) {
                 return response()->json(['success'=> false, 'error'=> $validator->messages()], 401);
             }
-            $product = ProductsModel::query()->findOrFail($request_data['product_id']);
-            $request_data['product_name'] = $product['name'];
-            $request_data['unit'] = $product['unit'];
-            $products = [];
-            if(Session::get('productInOrder')){
-                $products = Session::get('productInOrder');
+//            dd($request_data);
+            if ($request_data['id_order_product']){
+
+                $request_data['order_id'] = $request_data['id'];
+                $request_data['price'] = $request_data['price_product'];
+                $product_order = OrderProductsModel::query()->findOrFail($request_data['id_order_product']);
+                if ($product_order){
+                    $product_order->fill($request_data);
+                    $product_order->save();
+                }
+
+                $list_product = OrderProductsModel::select('order_products.id as order_products_id','products.category_id as category','products.*', 'products.name as product_name', 'order_products.quantity', 'order_products.price as price_product', 'order_products.product_id')
+                    ->where('order_id', $request_data['id'])->join('products', 'products.id', '=', 'product_id')
+                    ->orderBy('name', 'asc')->get();
+                $total_product_price = 0;
+                foreach ($list_product as $p){
+                    $p['into_money'] = $p['price_product']*$p['quantity'];
+                    $total_product_price = $total_product_price + $p['into_money'];
+                }
+                $order = OrdersModel::query()->findOrFail($request_data['id']);
+                $order['total_price'] = $total_product_price;
+                $order->save();
+                return Helpers::dataSuccess('Success', $list_product);
+            } else{
+                if ($request_data['id']){
+                    $check = OrderProductsModel::where('order_id', $request_data['id'])->where('product_id', $request_data['product_id'])->first();
+                    if ($check){
+                        $check['quantity'] = $check['quantity'] + $request_data['quantity'];
+                        $check->save();
+                    } else{
+                        $product_order = new OrderProductsModel();
+                        $product_order['order_id']= $request_data['id'];
+                        $product_order['product_id']= $request_data['product_id'];
+                        $product_order['price']= $request_data['price_product'];
+                        $product_order['quantity']= $request_data['quantity'];
+                        $product_order->save();
+                    }
+
+                    $list_product = OrderProductsModel::select('order_products.id as order_products_id','products.category_id as category','products.*', 'products.name as product_name', 'order_products.quantity', 'order_products.price as price_product', 'order_products.product_id')
+                        ->where('order_id', $request_data['id'])->join('products', 'products.id', '=', 'product_id')
+                        ->orderBy('name', 'asc')->get();
+                    $total_product_price = 0;
+                    foreach ($list_product as $p){
+                        $p['into_money'] = $p['price_product']*$p['quantity'];
+                        $total_product_price = $total_product_price + $p['into_money'];
+                    }
+                    $order = OrdersModel::query()->findOrFail($request_data['id']);
+                    $order['total_price'] = $total_product_price;
+                    $order->save();
+                    return Helpers::dataSuccess('Success', $list_product);
+                } else{
+                    $product = ProductsModel::query()->findOrFail($request_data['product_id']);
+                    $request_data['product_name'] = $product['name'];
+                    $request_data['unit'] = $product['unit'];
+                    $products = [];
+                    if(Session::get('productInOrder')){
+                        $products = Session::get('productInOrder');
+                    }
+
+                    if (!empty($request->id_temp)){
+                        foreach ($products as $key => $value)
+                        {
+                            if ($value['id_temp'] == $request_data['id_temp'])
+                            {
+                                unset($products[$key]);
+                            }
+                        }
+                    } else {
+                        $id_temp = rand(1,99999999999);
+                        $request_data['id_temp'] = $id_temp;
+                    }
+                    $productAdd = $request_data;
+                    array_push($products, $productAdd);
+                    Session::put('productInOrder', $products);
+                    $list_product = Session::get('productInOrder');
+                    return Helpers::dataSuccess('Success', $list_product);
+                }
+
             }
 
-            if (!empty($request->id_temp)){
-                foreach ($products as $key => $value)
-                {
-                    if ($value['id_temp'] == $request_data['id_temp'])
-                    {
-                        unset($products[$key]);
-                    }
-                }
-            } else {
-                $id_temp = rand(1,99999999999);
-                $request_data['id_temp'] = $id_temp;
-            }
-            $productAdd = $request_data;
-            array_push($products, $productAdd);
-            Session::put('productInOrder', $products);
-            $list_product = Session::get('productInOrder');
-            return Helpers::dataSuccess('Success', $list_product);
         } catch (\Exception $e){
             return redirect()->back()->withInput()->withErrors(['general' =>'sorry an unexpected error occurred. please try again later']);
         }
@@ -161,21 +221,40 @@ class OrdersController extends Controller
     {
         try {
             $request_data = $request->all();
-            if(Session::get('productInOrder')){
-                $cart = Session::get('productInOrder');
-            }else{
-                $cart = collect();
-            }
-            foreach ($cart as $key => $value)
-            {
-                if ($value['id_temp'] == $request_data['id'])
-                {
-                    unset($cart[$key]);
+            if ($request_data['order_id']){
+
+                $check = OrderProductsModel::query()->findOrFail($request_data['id']);
+                $check->delete();
+                $list_product = OrderProductsModel::select('order_products.id as order_products_id','products.category_id as category','products.*', 'products.name as product_name', 'order_products.quantity', 'order_products.price as price_product', 'order_products.product_id')
+                    ->where('order_id', $request_data['order_id'])->join('products', 'products.id', '=', 'product_id')
+                    ->orderBy('name', 'asc')->get();
+                $total_product_price = 0;
+                foreach ($list_product as $p){
+                    $p['into_money'] = $p['price_product']*$p['quantity'];
+                    $total_product_price = $total_product_price + $p['into_money'];
                 }
+                $order = OrdersModel::query()->findOrFail($request_data['order_id']);
+                $order['total_price'] = $total_product_price;
+                $order->save();
+                return Helpers::dataSuccess('Success', $list_product);
+            }else{
+                if(Session::get('productInOrder')){
+                    $cart = Session::get('productInOrder');
+                }else{
+                    $cart = collect();
+                }
+                foreach ($cart as $key => $value)
+                {
+                    if ($value['id_temp'] == $request_data['id'])
+                    {
+                        unset($cart[$key]);
+                    }
+                }
+                Session::put('productInOrder', $cart);
+                $list_product = Session::get('productInOrder');
+                return Helpers::dataSuccess('Success', $list_product);
             }
-            Session::put('productInOrder', $cart);
-            $list_product = Session::get('productInOrder');
-            return Helpers::dataSuccess('Success', $list_product);
+
         } catch (\Exception $e){
             return Helpers::dataError('Sorry an unexpected error occurred. please try again later');
         }
@@ -209,5 +288,40 @@ class OrdersController extends Controller
         } catch (\Exception $e){
             return redirect()->back()->withInput()->withErrors(['general' =>'sorry an unexpected error occurred. please try again later']);
         }
+    }
+
+    public function printLabel(Request $request)
+    {
+        $request_data = $request->all();
+        $model = OrdersModel::query()->findOrFail($request_data['id']);
+        $products = OrderProductsModel::select('order_products.id as order_products_id','products.category_id as category','products.*', 'products.name as product_name', 'order_products.quantity', 'order_products.price as price_product', 'order_products.product_id')
+            ->where('order_id', $request_data['id'])->join('products', 'products.id', '=', 'product_id')
+            ->orderBy('name', 'asc')->get();
+        $order_status = '';
+        foreach(\App\Models\OrdersModel::STATUS_ALL as $key => $status){
+            if ($model->order_status ==  $status['key']){
+                $order_status = $status['status_name'];
+            }
+        }
+
+
+        $data = [];
+        $data['recipient_name'] = $model['recipient_name'];
+        $data['recipient_phone'] = $model['recipient_phone'];
+        $data['recipient_address'] = $model['recipient_address'];
+        $data['order_status'] = $order_status;
+        $data['total_price'] = $model['total_price'];
+        $data['order_code'] = $model['order_code'];
+//        $data['recipient_name'] = $model['recipient_name'];
+        $data['products'] = $products;
+        $filename = 'label.pdf';
+        LaravelMpdf::loadView('admin.label', $data, [], [
+            'title' => 'label',
+            'margin_top' => 5,
+            'format' => 'A4',
+            'orientation' => 'L',
+        ])->save($filename);
+
+        return Helpers::dataSuccess('Success', asset($filename));
     }
 }

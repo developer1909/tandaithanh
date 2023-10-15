@@ -36,6 +36,7 @@ Route::group(['prefix' => 'orders'], function () {
     Route::post('add-product-order', [\App\Http\Controllers\Admin\OrdersController::class, 'addProductToOrder'])->name('orders.add.product');
     Route::post('add-product-edit-order', [\App\Http\Controllers\Admin\OrdersController::class, 'addProductToEditOrder'])->name('orders.add.edit.product');
     Route::get('remove-product-order', [\App\Http\Controllers\Admin\OrdersController::class, 'removeProductOrder'])->name('orders.remove.product');
+    Route::get('print-order', [\App\Http\Controllers\Admin\OrdersController::class, 'printLabel'])->name('orders.print');
 //    Route::post('', [\App\Http\Controllers\Admin\ProductsController::class, 'save'])->name('products.save');
 //    Route::post('delete-product', [\App\Http\Controllers\Admin\ProductsController::class, 'delete'])->name('products.delete');
 });

@@ -167,8 +167,8 @@
                                                             <a href="javascript:void(0)" class="btn btn-inverse btn-sm" product-id="{{$item->id}}" product-name="{{$item->name}}"
                                                                product-description="{{$item->description}}" product-category-id="{{$item->category_id}}"
                                                                 product-price="{{$item->price}}" product-unit="{{$item->unit}}"
-                                                               onclick="functionEdit(this)"><i class="icofont icofont-ui-edit"></i> Edit</a>
-                                                            <a href="javascript:void(0)" class="btn btn-danger btn-sm delete-product" data-id="{{$item->id}}" data-product="{{$item->name}}"><i class="icofont icofont-ui-delete"></i> Remove</a>
+                                                               onclick="functionEdit(this)"><i class="icofont icofont-ui-edit"></i> Sửa</a>
+                                                            <a href="javascript:void(0)" class="btn btn-danger btn-sm delete-product" data-id="{{$item->id}}" data-product="{{$item->name}}"><i class="icofont icofont-ui-delete"></i> Xóa</a>
                                                         </td>
                                                     </tr>
                                                 @endforeach

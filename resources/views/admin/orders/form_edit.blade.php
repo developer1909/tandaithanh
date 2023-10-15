@@ -32,7 +32,7 @@
                             <div class="col-sm-12">
                                 <div class="card">
                                     <div class="card-header">
-                                        <h5>{{$model->id ? 'Cập nhật đơn hàng' : 'Tạo mới đơn hàng'}}</h5>
+                                        <h5>{{$model->id ? 'Cập nhật đơn hàng' : 'Tạo mới đơn hàng'}} {{$model->order_code}}</h5>
                                         <div class="card-header-right">
                                             <ul class="list-unstyled card-option">
                                                 <li><i class="feather icon-maximize full-card"></i></li>
@@ -44,7 +44,7 @@
                                         <form method="POST" action="{{route('orders.save')}}">
                                             <div class="row">
                                                 @csrf
-                                                <input type="hidden" id="" name="id" value="{{$model->id}}">
+                                                <input type="hidden" id="id-order" name="id" value="{{$model->id}}">
                                                 <div class="col-md-12">
                                                     <div class="sub-title">Thông tin khách hàng</div>
                                                 </div>
@@ -131,9 +131,30 @@
                                                             </tr>
                                                             </thead>
                                                             <tbody id="data-product-table" >
-                                                            <tr class="odd">
-                                                                <td valign="top" colspan="10" class="dataTables_empty text-center">Không có dữ liệu để hiển thị</td>
-                                                            </tr>
+                                                            @if(count($products) == 0)
+                                                                <tr class="odd">
+                                                                    <td valign="top" colspan="10" class="dataTables_empty text-center">Không có dữ liệu để hiển thị</td>
+                                                                </tr>
+                                                            @endif
+                                                            <?php
+                                                                $i = 0;
+                                                            ?>
+                                                            @foreach($products as $p)
+                                                                <tr>
+                                                                    <td class="text-center">{{$i = $i+1}}</td>
+                                                                    <td>{{$p->name}}</td>
+                                                                    <td>{{$p->unit}}</td>
+                                                                    <td>{{$p->quantity}}</td>
+                                                                    <td>{{number_format($p->price_product) }}</td>
+                                                                    <td>{{number_format($p->quantity*$p->price_product,0)}}</td>
+                                                                    <td>
+                                                                        <a href="javascript:void(0)" onclick="updateProduct(this)" category="{{$p->category}}" product-id="{{$p->product_id}}" product-name="{{$p->product_name}}"
+                                                                        price_product="{{$p->price_product}}" product_quantity="{{$p->quantity}}" into_money="{{$p->into_money}}"
+                                                                        id_temp="{{$p->order_products_id}}" id_order_product="{{$p->order_products_id}}" class="btn btn-sm btn-inverse m-r-5">Sửa</a>
+                                                                        <a href="javascript:void(0)" onclick="removeProduct({{$p->order_products_id}})" class="btn btn-sm btn-danger">Xóa</a>
+                                                                    </td>
+                                                                </tr>
+                                                            @endforeach
                                                             </tbody>
                                                         </table>
                                                     </div>
@@ -154,6 +175,7 @@
                                                 </div>
                                                 <div class="col-md-12 ">
                                                     <div class="form-group text-right">
+                                                        <a href="javascript:void(0)" onclick="printLabel({{$model->id}})" class="btn btn-inverse"> In hóa đơn</a>
                                                         <button type="submit" class="btn btn-primary m-b-0"><i class="icofont icofont-diskette"></i> Lưu</button>
                                                         {{--                                                        <a href="javascript:void(0)" class="btn btn-secondary m-b-0" onclick="functionCancel(this)"><i class="icofont icofont-refresh"></i> Reset form</a>--}}
                                                     </div>
@@ -206,7 +228,7 @@
                     let qty = $(this).find('option:selected').attr('data-qty');
                     $('#price_product').val(price);
                     $('#qty').val(qty);
-                    $('#quantity').val(1).attr('max', qty);
+                    $('#quantity').attr('max', qty);
                     price = parseInt(price) * parseInt($('#quantity').val());
                     $('#into_money').val(price);
                 } else {
@@ -226,6 +248,7 @@
             $('[name=into_money]').val(0);
             $('[name=note_modal]').val('');
             $('[name=id_temp]').val('');
+            $('[name=id_order_product]').val('');
         });
 
         function functionAddProduct(){
@@ -242,6 +265,25 @@
             $('[name=quantity]').val(1);
             $('[name=extra_charges]').val(0);
             $('[name=note_modal]').val('');
+        }
+
+        function printLabel(id) {
+            $.ajax({
+                url: "{{ route('orders.print') }}",
+                method: "GET",
+                data: {id: id
+                },
+                success: function (data) {
+                    if(typeof data === 'string'){
+                        data = JSON.parse(data);
+                    }
+                    if (data.code === 200){
+                        window.open(data.data);
+                    } else {
+                        alert(data.message)
+                    }
+                }
+            });
         }
     </script>
     <script src="{{asset('template_admin\files\bower_components\datatables.net\js\jquery.dataTables.min.js')}} "></script>
