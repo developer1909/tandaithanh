@@ -170,10 +170,10 @@
                                                     <tr id="product{{$item->id}}">
                                                         <td style="vertical-align: middle" class="text-center">{{$i = $i+1}}</td>
                                                         <td style="vertical-align: middle; white-space: break-spaces;">{{$item->name}}</td>
-                                                        <td >{{$item->category}}</td>
-                                                        <td >{{$item->description}}</td>
-                                                        <td >{{number_format($item->price,0) }}/{{$item->unit}}</td>
-                                                        <td >
+                                                        <td style="vertical-align: middle"  >{{$item->category}}</td>
+                                                        <td style="vertical-align: middle; white-space: break-spaces;"  >{{$item->description}}</td>
+                                                        <td style="vertical-align: middle"  >{{number_format($item->price,0) }}/{{$item->unit}}</td>
+                                                        <td  style="vertical-align: middle" >
                                                             <p style="margin: 0;">Tông số lượng: <span style="font-weight: 800; color: #0ac282" id="total-qty{{$item->id}}">{{$item->qty}}</span></p>
                                                             <div id="div-qty{{$item->id}}">
                                                                 @foreach($item->product_qty as $qty)
@@ -183,7 +183,7 @@
                                                                 @endforeach
                                                             </div>
                                                         </td>
-                                                        <td>
+                                                        <td style="vertical-align: middle" >
                                                             <a href="javascript:void(0)" class="btn btn-inverse btn-sm" product-id="{{$item->id}}" product-name="{{$item->name}}"
                                                                product-description="{{$item->description}}" product-category-id="{{$item->category_id}}"
                                                                 product-price="{{$item->price}}" product-unit="{{$item->unit}}"
@@ -235,6 +235,18 @@
                             <label for="quantity">Kho 2: <span class="text-danger">(*)</span></label>
                             <br>
                             <input type="number" class="form-control" id="quantity2" name="quantity2" value="0" min="0">
+                            <p class="text-danger"></p>
+                        </div>
+                        <div class="form-group col-6">
+                            <label for="quantity">Kho 3: <span class="text-danger">(*)</span></label>
+                            <br>
+                            <input type="number" class="form-control" id="quantity3" name="quantity3" value="0" min="0">
+                            <p class="text-danger"></p>
+                        </div>
+                        <div class="form-group col-6">
+                            <label for="quantity">Kho 4: <span class="text-danger">(*)</span></label>
+                            <br>
+                            <input type="number" class="form-control" id="quantity4" name="quantity4" value="0" min="0">
                             <p class="text-danger"></p>
                         </div>
                     </div>
@@ -303,7 +315,7 @@
         }
 
         function updateQTY(id){
-            let w = 2;
+            let w = 4;
             $.ajax({
                 url: "{{ route('products.get_detail') }}",
                 method: "GET",
@@ -384,6 +396,8 @@
             formData.append('id', $('#id-product-modal').val());
             formData.append('qty1', $('#quantity1').val());
             formData.append('qty2', $('#quantity2').val());
+            formData.append('qty3', $('#quantity3').val());
+            formData.append('qty4', $('#quantity4').val());
             $.ajax({
                 url: '{{ route('products.update.qty') }}',
                 type: 'POST',

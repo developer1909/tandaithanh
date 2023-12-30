@@ -174,6 +174,8 @@
                                                                             <div class="dropdown-menu" aria-labelledby="dropdown-2" data-dropdown-in="fadeIn" data-dropdown-out="fadeOut">
                                                                                 <a class="dropdown-item waves-light waves-effect" href="javascript:void(0)" onclick="exportWarehouse(1, {{$p->order_products_id}})">Kho 1</a>
                                                                                 <a class="dropdown-item waves-light waves-effect" href="javascript:void(0)" onclick="exportWarehouse(2, {{$p->order_products_id}})">Kho 2</a>
+                                                                                <a class="dropdown-item waves-light waves-effect" href="javascript:void(0)" onclick="exportWarehouse(3, {{$p->order_products_id}})">Kho 3</a>
+                                                                                <a class="dropdown-item waves-light waves-effect" href="javascript:void(0)" onclick="exportWarehouse(4, {{$p->order_products_id}})">Kho 4</a>
                                                                             </div>
                                                                         </div>
                                                                         @endif
@@ -328,7 +330,9 @@
                         data = JSON.parse(data);
                     }
                     if (data.code === 200){
-                        location.reload();
+                        console.log(data)
+                        window.open(data.data);
+                        // location.reload();
                     } else {
                         alert(data.message)
                     }
@@ -346,7 +350,8 @@
                         data = JSON.parse(data);
                     }
                     if (data.code === 200){
-                        window.open(data.data);
+                        // window.open(data.data);
+                        location.reload();
                     } else {
                         alert(data.message)
                     }

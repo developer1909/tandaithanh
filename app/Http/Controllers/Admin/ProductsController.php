@@ -112,7 +112,7 @@ class ProductsController extends Controller
             $request_data = $request->all();
             $model = ProductsModel::query()->findOrFail($request_data['id']);
             if ($model){
-                $w = 2;
+                $w = 4;
                 for($i = 1; $i <= $w; $i++){
                     $check = ProductQtyModel::where('product_id', $request_data['id'])->where('warehouse', $i)->first();
                     if ($check){
